@@ -99,11 +99,17 @@ class User < ApplicationRecord
     reset_sent_at < 2.hours.ago
   end
 
-  # Defines a proto-feed (see "Following users" for full implementation)
-  # the '?' ensures that the (self.)id is properly escaped before being included in the
-  # SQL query, to avoid SQL injection
+  # Returns a user's status feed
+  # The hash based syntax is more convenient than the '?' syntax as we need the
+  # same variable to be inserted into the query more than once
   def feed
-    Micropost.where('user_id = ?', id)
+    # This subselect pushes the finding of the followed user ids into the database
+    # this is more efficient as SQL is optimised for set operations.
+    # If there were only a small number of users and microposts, then we could just use the
+    # Active Record .following_ids method for the User
+    following_ids = 'SELECT followed_id FROM relationships WHERE follower_id = :user_id'
+    Micropost.where("user_id IN (#{following_ids}) OR user_id = :user_id", user_id: id)
+             .includes(:user, image_attachment: :blob)
   end
 
   def follow(other_user)
@@ -111,6 +117,7 @@ class User < ApplicationRecord
   end
 
   def unfollow(other_user)
+    puts "Unfollow method other_user = #{other_user.id}"
     return unless following?(other_user)
 
     following.delete(other_user)

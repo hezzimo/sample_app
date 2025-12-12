@@ -106,4 +106,22 @@ class UserTest < ActiveSupport::TestCase
       kermit.unfollow(lana)
     end
   end
+
+  test 'feed should have the right posts' do
+    kermit = users(:kermit)
+    gonzo = users(:gonzo)
+    lana = users(:lana)
+    # Posts from followed user
+    lana.microposts.each do |post_following|
+      assert kermit.feed.include?(post_following)
+    end
+    # Self-posts for user with followers
+    kermit.microposts.each do |post_self|
+      assert kermit.feed.include?(post_self)
+    end
+    # Posts from a non-followed user
+    gonzo.microposts.each do |post_unfollowed|
+      assert_not kermit.feed.include?(post_unfollowed)
+    end
+  end
 end
