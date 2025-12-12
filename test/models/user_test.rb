@@ -88,6 +88,7 @@ class UserTest < ActiveSupport::TestCase
   test 'should be able to follow and unfollow a user' do
     kermit = users(:kermit)
     lana = users(:lana)
+    kermit.unfollow(lana)
 
     assert_not kermit.following?(lana)
     kermit.follow(lana)
